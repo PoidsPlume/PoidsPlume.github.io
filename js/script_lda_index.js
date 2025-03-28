@@ -7,10 +7,25 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.text())
             .then(data => {
                 contentDiv.innerHTML = data;
+                // Exécuter les scripts après avoir inséré le contenu
+                executeScriptsInContent(contentDiv);
             })
             .catch(error => {
                 console.error('Error loading content:', error);
             });
+    }
+
+    function executeScriptsInContent(container) {
+        const scripts = container.querySelectorAll('script');
+        scripts.forEach(script => {
+            const newScript = document.createElement('script');
+            if (script.src) {
+                newScript.src = script.src;
+            } else {
+                newScript.textContent = script.textContent;
+            }
+            document.head.appendChild(newScript);
+        });
     }
 
     menuItems.forEach(item => {
@@ -30,3 +45,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Charger le contenu par défaut pour 2019
     loadContent(2019);
 });
+
