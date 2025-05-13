@@ -23,3 +23,31 @@
 #titre p {
     font-style: italic;
 }
+
+span.dial {
+    border-radius: 4px;
+    font-style: italic;
+}
+
+span.dial.direct {
+    border: 2px solid;
+}
+
+span.dial.indirect {
+    border: 2px dashed;
+}
+
+
+span.dial.tds {
+    border-color: #ff0000; /* Rouge */
+}
+
+
+span.dial.justice {
+    border-color: #0000ff; /* Bleu */
+}
+
+
+span.dial.agresseur {
+    border-color: #008000; /* Vert */
+}
