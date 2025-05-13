@@ -21,6 +21,5 @@
 }
 
 #titre p {
-    margin: 10px 0; /* Espacement vertical */
-    color: #555;
+    font-style: italic;
 }
