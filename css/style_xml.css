@@ -1,0 +1,26 @@
+#titre {
+    margin: 0 auto;
+    width: 90%;
+
+    border: 2px solid black;
+    border-radius: 10px;
+
+    background-color: #f5f5f5;
+
+    text-align: center;
+
+    padding: 20px;
+
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+#titre h1 {
+    margin-top: 0;
+    color: #333;
+}
+
+#titre p {
+    margin: 10px 0; /* Espacement vertical */
+    color: #555;
+}
