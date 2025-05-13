@@ -25,7 +25,7 @@
 }
 
  #text {
-    line-height: 2;
+    line-height: 1.5;
 }
 
 span.dial {
@@ -54,4 +54,27 @@ span.dial.justice {
 
 span.dial.agresseur {
     border-color: #008000; /* Vert */
+}
+
+span.ref.homme {
+    background-color: #e6ffe6; /* Vert pâle */
+}
+
+/* Style pour les spans avec classe ref et tds */
+span.ref.tds {
+    background-color: #ffcccc; /* Rouge pâle */
+}
+
+/* Style supplémentaire pour améliorer la lisibilité */
+span.ref {
+    transition: background-color 0.2s ease; /* Animation douce au survol */
+}
+
+/* Effet au survol pour une meilleure interaction */
+span.ref.homme:hover {
+    background-color: #ccffcc; /* Vert légèrement plus foncé au survol */
+}
+
+span.ref.tds:hover {
+    background-color: #ff9999; /* Rouge légèrement plus foncé au survol */
 }
