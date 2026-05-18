@@ -365,6 +365,91 @@
     .multicheck-search input:focus { border-color: var(--color-primary); }
     .multicheck-item.hidden { display: none; }
     .multicheck-divider { height: 1px; background: var(--color-divider); margin: var(--space-2) 0; }
+    /* ── Drawers mobiles ────────────────────────────────── */
+    .mobile-fab-bar {
+      display: none;
+      position: fixed;
+      bottom: 1.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      gap: 0.7rem;
+    }
+    @media (max-width: 920px) { .mobile-fab-bar { display: flex; } }
+
+    .fab-btn {
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 0.65rem 1.1rem;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(1,105,111,0.35);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+    }
+    .fab-btn.secondary {
+      background: var(--color-surface);
+      color: var(--color-text);
+      box-shadow: 0 2px 10px rgba(40,37,29,0.14);
+      border: 1px solid var(--color-border);
+    }
+
+    .mobile-drawer {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 3000;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      border-radius: 1.2rem 1.2rem 0 0;
+      padding: 1.4rem 1.4rem calc(1.4rem + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 32px rgba(40,37,29,0.13);
+      max-height: 75dvh;
+      overflow-y: auto;
+    }
+    .mobile-drawer.open { display: block; }
+    @media (min-width: 921px) { .mobile-drawer { display: none !important; } }
+
+    .mobile-drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .mobile-drawer-header h3 { margin: 0; font-size: var(--text-base); font-weight: 600; }
+    .mobile-drawer-close {
+      background: none; border: none; cursor: pointer;
+      color: var(--color-text-muted); font-size: 1.5rem; line-height: 1; padding: 0.2rem;
+    }
+
+    .drawer-legend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.4rem 1rem;
+    }
+
+    .drawer-controls { display: grid; gap: 1rem; }
+
+    .mobile-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.28);
+      z-index: 2999;
+    }
+    .mobile-overlay.open { display: block; }
+
+    @media (max-width: 920px) {
+      .leaflet-control.legend { display: none; }
+      .topbar { display: none; }
+      #map { height: 100dvh !important; min-height: unset !important; }
+    }
+
     @media (max-width: 920px) {
       .controls { grid-template-columns: 1fr; }
       .title-row { flex-direction: column; }
@@ -447,6 +532,39 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Overlay -->
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <!-- Drawer Légende -->
+  <div class="mobile-drawer" id="drawer-legend" role="dialog" aria-modal="true">
+    <div class="mobile-drawer-header">
+      <h3>Couleurs des pays</h3>
+      <button class="mobile-drawer-close" data-close="drawer-legend">×</button>
+    </div>
+    <div class="drawer-legend-grid" id="drawer-legend-items"></div>
+  </div>
+
+  <!-- Drawer Filtres -->
+  <div class="mobile-drawer" id="drawer-filters" role="dialog" aria-modal="true">
+    <div class="mobile-drawer-header">
+      <h3>Filtres</h3>
+      <button class="mobile-drawer-close" data-close="drawer-filters">×</button>
+    </div>
+    <div class="drawer-controls" id="drawer-controls-inner"></div>
+  </div>
+
+  <!-- FAB Bar -->
+  <div class="mobile-fab-bar">
+    <button class="fab-btn secondary" id="fab-legend">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      Légende
+    </button>
+    <button class="fab-btn" id="fab-filters">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      Filtres
+    </button>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -582,6 +700,7 @@
 
     let geojsonData = null;
     let colorMap = {};
+    window.colorMap = colorMap;
     let legendControl = null;
     let yearMin = 1970;
     let yearMax = 2025;
@@ -893,6 +1012,60 @@
 
       renderMarkers();
     }
+
+    // ── Drawers mobiles ────────────────────────────────────────────
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    let currentDrawer = null;
+
+    function openDrawer(id) {
+      if (currentDrawer) currentDrawer.classList.remove('open');
+      currentDrawer = document.getElementById(id);
+      if (currentDrawer) currentDrawer.classList.add('open');
+      mobileOverlay.classList.add('open');
+    }
+    function closeDrawer() {
+      if (currentDrawer) currentDrawer.classList.remove('open');
+      currentDrawer = null;
+      mobileOverlay.classList.remove('open');
+    }
+
+    document.getElementById('fab-legend')?.addEventListener('click', () => {
+      // Sync contenu légende
+      const items = document.getElementById('drawer-legend-items');
+      if (items && window.colorMap) {
+        items.innerHTML = Object.keys(window.colorMap).map(c => `
+          <div class="legend-item">
+            <span class="legend-swatch" style="background:${window.colorMap[c]}"></span>
+            <span>${c}</span>
+          </div>`).join('');
+      }
+      openDrawer('drawer-legend');
+    });
+
+    document.getElementById('fab-filters')?.addEventListener('click', () => {
+      // Cloner les controls du topbar dans le drawer filtres
+      const inner = document.getElementById('drawer-controls-inner');
+      const source = document.querySelector('.controls');
+      if (inner && source && inner.children.length === 0) {
+        // Clone léger : on déplace les enfants visuellement via innerHTML miroir
+        inner.innerHTML = source.innerHTML;
+        // Lier les inputs clonés aux vrais inputs via events
+        inner.querySelectorAll('input[type="checkbox"]').forEach(clone => {
+          const real = document.querySelector(`.controls input[type="checkbox"][id="${clone.id}"]`);
+          if (real) {
+            clone.checked = real.checked;
+            clone.addEventListener('change', () => { real.checked = clone.checked; real.dispatchEvent(new Event('change', {bubbles:true})); });
+            real.addEventListener('change', () => { clone.checked = real.checked; });
+          }
+        });
+      }
+      openDrawer('drawer-filters');
+    });
+
+    document.querySelectorAll('.mobile-drawer-close').forEach(btn => {
+      btn.addEventListener('click', closeDrawer);
+    });
+    mobileOverlay.addEventListener('click', closeDrawer);
 
     init().catch(error => {
       console.error(error);
