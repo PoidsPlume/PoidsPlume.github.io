@@ -365,7 +365,9 @@
     .multicheck-search input:focus { border-color: var(--color-primary); }
     .multicheck-item.hidden { display: none; }
     .multicheck-divider { height: 1px; background: var(--color-divider); margin: var(--space-2) 0; }
-    /* ── Drawers mobiles ────────────────────────────────── */
+    .mobile-stats-bar { display: none; }
+
+    /* ── FAB bar ── */
     .mobile-fab-bar {
       display: none;
       position: fixed;
@@ -400,6 +402,7 @@
       border: 1px solid var(--color-border);
     }
 
+    /* ── Drawers ── */
     .mobile-drawer {
       display: none;
       position: fixed;
@@ -427,15 +430,11 @@
       background: none; border: none; cursor: pointer;
       color: var(--color-text-muted); font-size: 1.5rem; line-height: 1; padding: 0.2rem;
     }
-
     .drawer-legend-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
       gap: 0.4rem 1rem;
     }
-
-    .drawer-controls { display: grid; gap: 1rem; }
-
     .mobile-overlay {
       display: none;
       position: fixed; inset: 0;
@@ -445,16 +444,20 @@
     .mobile-overlay.open { display: block; }
 
     @media (max-width: 920px) {
-      .leaflet-control.legend { display: none; }
-      .topbar { display: none; }
-      #map { height: 100dvh !important; min-height: unset !important; }
-    }
-
-    @media (max-width: 920px) {
       .controls { grid-template-columns: 1fr; }
       .title-row { flex-direction: column; }
       .stats { justify-content: flex-start; }
-      #map { height: calc(100dvh - 330px); min-height: 480px; }
+      /* Masquer titre, stats desktop et filtres sur mobile */
+      .title-row > div:first-child,
+      .title-row .stats { display: none !important; }
+      /* Controls masqués dans la topbar, visibles dans le drawer */
+      .topbar #shared-controls-wrapper { display: none !important; }
+      /* Afficher stats mobiles */
+      .mobile-stats-bar { display: flex !important; }
+      /* Topbar réduite à la hauteur des stats mobiles */
+      .topbar-inner { padding-top: 0.4rem; padding-bottom: 0.4rem; }
+      .leaflet-control.legend { display: none; }
+      #map { height: calc(100dvh - 52px); min-height: unset; }
     }
   </style>
 </head>
@@ -472,7 +475,13 @@
             <div class="pill" id="stat-source" style="white-space:nowrap;min-width:max-content">0 citations</div>
           </div>
         </div>
-        <div class="controls">
+        <!-- Barre stats mobile (dupliquée pour affichage permanent) -->
+        <div class="stats mobile-stats-bar" id="mobile-stats-bar" aria-hidden="true">
+          <div class="pill" id="stat-total-m">0 lieux</div>
+          <div class="pill" id="stat-visible-m">0 visibles</div>
+          <div class="pill" id="stat-source-m" style="white-space:nowrap;min-width:max-content">0 citations</div>
+        </div>
+        <div id="shared-controls-wrapper"><div class="controls">
           <div class="control">
             <label for="year-slider">Période de publication</label>
             <div id="year-slider" aria-label="Filtre par années"></div>
@@ -519,7 +528,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </div></div>
       </div>
     </header>
 
@@ -552,7 +561,7 @@
       <h3>Filtres</h3>
       <button class="mobile-drawer-close" data-close="drawer-filters">×</button>
     </div>
-    <div class="drawer-controls" id="drawer-controls-inner"></div>
+    <div id="drawer-controls-slot"></div>
   </div>
 
   <!-- FAB Bar -->
@@ -700,7 +709,6 @@
 
     let geojsonData = null;
     let colorMap = {};
-    window.colorMap = colorMap;
     let legendControl = null;
     let yearMin = 1970;
     let yearMax = 2025;
@@ -932,6 +940,13 @@
       statVisible.textContent = `${visibleFeatures.length} visibles`;
       const totalArticlesInPeriod = visibleFeatures.reduce((sum, f) => sum + countArticles(f.properties, minYear, maxYear), 0);
       statSource.textContent = `${totalArticlesInPeriod.toLocaleString('fr-FR')} citations`;
+      // Sync stats mobiles
+      const mTotal = document.getElementById('stat-total-m');
+      const mVisible = document.getElementById('stat-visible-m');
+      const mSource = document.getElementById('stat-source-m');
+      if (mTotal) mTotal.textContent = statTotal.textContent;
+      if (mVisible) mVisible.textContent = statVisible.textContent;
+      if (mSource) mSource.textContent = statSource.textContent;
       emptyState.style.display = visibleFeatures.length ? 'none' : 'flex';
       createLegend();
     }
@@ -1015,7 +1030,13 @@
 
     // ── Drawers mobiles ────────────────────────────────────────────
     const mobileOverlay = document.getElementById('mobile-overlay');
+    const sharedControls = document.getElementById('shared-controls-wrapper');
+    const drawerSlot = document.getElementById('drawer-controls-slot');
+    let desktopSlot = null; // capturé au premier clic, pas à l'init
     let currentDrawer = null;
+    let controlsInDrawer = false;
+
+    function isMobile() { return window.innerWidth <= 920; }
 
     function openDrawer(id) {
       if (currentDrawer) currentDrawer.classList.remove('open');
@@ -1023,42 +1044,35 @@
       if (currentDrawer) currentDrawer.classList.add('open');
       mobileOverlay.classList.add('open');
     }
+
     function closeDrawer() {
       if (currentDrawer) currentDrawer.classList.remove('open');
       currentDrawer = null;
       mobileOverlay.classList.remove('open');
+      // Remettre les controls dans la topbar
+      if (controlsInDrawer && desktopSlot && sharedControls) {
+        desktopSlot.appendChild(sharedControls);
+        controlsInDrawer = false;
+      }
     }
 
     document.getElementById('fab-legend')?.addEventListener('click', () => {
-      // Sync contenu légende
       const items = document.getElementById('drawer-legend-items');
-      if (items && window.colorMap) {
-        items.innerHTML = Object.keys(window.colorMap).map(c => `
-          <div class="legend-item">
-            <span class="legend-swatch" style="background:${window.colorMap[c]}"></span>
-            <span>${c}</span>
-          </div>`).join('');
+      if (items) {
+        const legendItems = document.querySelectorAll('.legend .legend-item');
+        if (legendItems.length > 0) {
+          items.innerHTML = Array.from(legendItems).map(el => el.outerHTML).join('');
+        }
       }
       openDrawer('drawer-legend');
     });
 
     document.getElementById('fab-filters')?.addEventListener('click', () => {
-      // Cloner les controls du topbar dans le drawer filtres
-      const inner = document.getElementById('drawer-controls-inner');
-      const source = document.querySelector('.controls');
-      if (inner && source && inner.children.length === 0) {
-        // Clone léger : on déplace les enfants visuellement via innerHTML miroir
-        inner.innerHTML = source.innerHTML;
-        // Lier les inputs clonés aux vrais inputs via events
-        inner.querySelectorAll('input[type="checkbox"]').forEach(clone => {
-          const real = document.querySelector(`.controls input[type="checkbox"][id="${clone.id}"]`);
-          if (real) {
-            clone.checked = real.checked;
-            clone.addEventListener('change', () => { real.checked = clone.checked; real.dispatchEvent(new Event('change', {bubbles:true})); });
-            real.addEventListener('change', () => { clone.checked = real.checked; });
-          }
-        });
-      }
+      if (!sharedControls) return;
+      // Mémoriser le parent desktop au premier clic
+      if (!desktopSlot) desktopSlot = sharedControls.parentElement;
+      drawerSlot.appendChild(sharedControls);
+      controlsInDrawer = true;
       openDrawer('drawer-filters');
     });
 
@@ -1066,6 +1080,10 @@
       btn.addEventListener('click', closeDrawer);
     });
     mobileOverlay.addEventListener('click', closeDrawer);
+
+    window.addEventListener('resize', () => {
+      if (!isMobile() && controlsInDrawer) closeDrawer();
+    });
 
     init().catch(error => {
       console.error(error);
