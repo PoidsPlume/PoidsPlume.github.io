@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lieux cités dans les articles mentionnant la prostitution</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.css">
+  <style>
+    :root {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --color-bg: #f7f6f2;
+      --color-surface: #fbfbf9;
+      --color-surface-2: #f3f0ec;
+      --color-border: #d4d1ca;
+      --color-divider: #dcd9d5;
+      --color-text: #28251d;
+      --color-text-muted: #6f6b63;
+      --color-text-faint: #9a978f;
+      --color-primary: #01696f;
+      --color-primary-hover: #0c4e54;
+      --shadow-sm: 0 1px 2px rgba(40,37,29,0.06);
+      --shadow-md: 0 8px 24px rgba(40,37,29,0.08);
+      --font-body: 'Instrument Sans', Inter, sans-serif;
+      --content-wide: 1280px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.5;
+      color: var(--color-text);
+      background: var(--color-bg);
+    }
+    a { color: inherit; }
+    .app {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(251,251,249,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(40,37,29,0.12);
+      box-shadow: var(--shadow-sm);
+    }
+    .topbar-inner {
+      max-width: var(--content-wide);
+      margin: 0 auto;
+      padding: var(--space-4);
+      display: grid;
+      gap: var(--space-4);
+    }
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: var(--space-4);
+    }
+    h1 {
+      margin: 0;
+      font-size: var(--text-xl);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+    .subtitle {
+      margin: var(--space-1) 0 0;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+      max-width: 70ch;
+    }
+    .stats {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .pill {
+      border: 1px solid rgba(40,37,29,0.1);
+      background: var(--color-surface);
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      white-space: nowrap;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr 0.9fr;
+      gap: var(--space-4);
+      align-items: end;
+    }
+    .control {
+      display: grid;
+      gap: var(--space-2);
+      min-width: 0;
+    }
+    .control label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+    .control small {
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+    }
+    select {
+      width: 100%;
+      border: 1px solid rgba(40,37,29,0.14);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-radius: var(--radius-md);
+      padding: 0.8rem 0.9rem;
+      min-height: 44px;
+      outline: none;
+    }
+    select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(1,105,111,0.12); }
+    #year-slider { margin: 0.8rem 0 0.25rem; }
+    .year-readout {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-2);
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+    }
+    .map-wrap {
+      min-height: 0;
+      padding: var(--space-4);
+    }
+    #map {
+      width: 100%;
+      height: calc(100dvh - 210px);
+      min-height: 520px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      border: 1px solid rgba(40,37,29,0.12);
+      box-shadow: var(--shadow-md);
+      background: #e9ecef;
+    }
+    .legend {
+      background: rgba(251,251,249,0.96);
+      border: 1px solid rgba(40,37,29,0.12);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3);
+      box-shadow: var(--shadow-sm);
+      max-width: 240px;
+    }
+    .legend h3 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--text-sm);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin: 0.3rem 0;
+    }
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex: none;
+    }
+    .leaflet-popup-content { margin: 12px 14px; }
+    .popup {
+      min-width: 240px;
+      max-width: 320px;
+      color: var(--color-text);
+    }
+    .popup h3 {
+      margin: 0 0 0.25rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .popup-meta {
+      color: var(--color-text-muted);
+      font-size: 0.78rem;
+      margin-bottom: 0.7rem;
+    }
+    .popup-grid {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 0.8rem;
+      align-items: center;
+    }
+    .popup-section {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(40,37,29,0.08);
+      font-size: 0.82rem;
+    }
+    .popup-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+    }
+    .tag {
+      background: var(--color-surface-2);
+      border: 1px solid rgba(40,37,29,0.08);
+      border-radius: 999px;
+      padding: 0.15rem 0.45rem;
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+    }
+    .popup-ranking-item {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0.24rem 0;
+      font-size: 0.76rem;
+      color: var(--color-text-muted);
+    }
+    .popup-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      flex: none;
+    }
+    .empty-state {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 500;
+    }
+    .empty-card {
+      pointer-events: auto;
+      background: rgba(251,251,249,0.95);
+      border: 1px solid rgba(40,37,29,0.12);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-md);
+      text-align: center;
+      max-width: 28rem;
+      margin: var(--space-4);
+    }
+    .empty-card p { margin: 0.5rem 0 0; color: var(--color-text-muted); }
+    .noUi-target {
+      border: none;
+      box-shadow: none;
+      background: #dcd9d5;
+      height: 8px;
+    }
+    .noUi-connect { background: var(--color-primary); }
+    .noUi-horizontal .noUi-handle {
+      width: 18px; height: 18px; right: -9px; top: -6px;
+      border-radius: 999px; border: 2px solid white; background: var(--color-primary);
+      box-shadow: 0 2px 10px rgba(1,105,111,0.25);
+    }
+    .noUi-handle::before, .noUi-handle::after { display: none; }
+    .noUi-tooltip {
+      border: none;
+      background: var(--color-surface);
+      color: var(--color-text);
+      box-shadow: var(--shadow-sm);
+      font-size: 0.75rem;
+      padding: 0.35rem 0.45rem;
+      border-radius: var(--radius-sm);
+    }
+    .multicheck-wrap { position: relative; }
+    .multicheck-trigger {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.8rem 0.9rem;
+      border: 1px solid rgba(40,37,29,0.14);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 180ms, box-shadow 180ms;
+    }
+    .multicheck-trigger:focus, .multicheck-trigger[aria-expanded="true"] {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(1,105,111,0.12);
+      outline: none;
+    }
+    .multicheck-trigger svg { flex-shrink: 0; color: var(--color-text-muted); transition: transform 180ms; }
+    .multicheck-trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .multicheck-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .multicheck-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      background: var(--color-surface);
+      border: 1px solid rgba(40,37,29,0.14);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      z-index: 2000;
+      max-height: 260px;
+      overflow-y: auto;
+      padding: var(--space-2) 0;
+    }
+    .multicheck-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 0.45rem var(--space-4);
+      font-size: var(--text-sm);
+      cursor: pointer;
+      transition: background 120ms;
+      user-select: none;
+    }
+    .multicheck-item:hover { background: var(--color-surface-2); }
+    .multicheck-item input[type="checkbox"] {
+      width: 15px; height: 15px;
+      accent-color: var(--color-primary);
+      cursor: pointer; flex-shrink: 0;
+    }
+    .multicheck-all { font-weight: 600; color: var(--color-text-muted); }
+    .multicheck-search {
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--color-divider);
+      position: sticky;
+      top: 0;
+      background: var(--color-surface);
+      z-index: 1;
+    }
+    .multicheck-search input {
+      width: 100%;
+      border: 1px solid rgba(40,37,29,0.14);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.6rem;
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      background: var(--color-bg);
+      color: var(--color-text);
+      outline: none;
+    }
+    .multicheck-search input:focus { border-color: var(--color-primary); }
+    .multicheck-item.hidden { display: none; }
+    .multicheck-divider { height: 1px; background: var(--color-divider); margin: var(--space-2) 0; }
+    @media (max-width: 920px) {
+      .controls { grid-template-columns: 1fr; }
+      .title-row { flex-direction: column; }
+      .stats { justify-content: flex-start; }
+      #map { height: calc(100dvh - 330px); min-height: 480px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="title-row">
+          <div>
+            <h1>Lieux cités dans les articles mentionnant la prostitution</h1>
+          </div>
+          <div class="stats">
+            <div class="pill" id="stat-total">0 lieux</div>
+            <div class="pill" id="stat-visible">0 visibles</div>
+            <div class="pill" id="stat-source" style="white-space:nowrap;min-width:max-content">0 citations</div>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="control">
+            <label for="year-slider">Période de publication</label>
+            <div id="year-slider" aria-label="Filtre par années"></div>
+            <div class="year-readout">
+              <span id="year-min-readout">—</span>
+              <span id="year-max-readout">—</span>
+            </div>
+          </div>
+          <div class="control">
+            <label>Pays du journal</label>
+            <div class="multicheck-wrap" id="source-wrap">
+              <button type="button" class="multicheck-trigger" id="source-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span id="source-label">Tous les pays</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="multicheck-dropdown" id="source-dropdown" role="listbox" aria-multiselectable="true" hidden>
+                <div class="multicheck-search">
+                  <input type="text" id="source-search" placeholder="Rechercher un pays…" autocomplete="off">
+                </div>
+                <label class="multicheck-item multicheck-all">
+                  <input type="checkbox" id="source-all" checked> <span>Tout sélectionner</span>
+                </label>
+                <div class="multicheck-divider"></div>
+                <div id="source-options"></div>
+              </div>
+            </div>
+          </div>
+          <div class="control">
+            <label>Journaux</label>
+            <div class="multicheck-wrap" id="place-wrap">
+              <button type="button" class="multicheck-trigger" id="place-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span id="place-label">Tous les journaux</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="multicheck-dropdown" id="place-dropdown" role="listbox" aria-multiselectable="true" hidden>
+                <div class="multicheck-search">
+                  <input type="text" id="place-search" placeholder="Rechercher un journal…" autocomplete="off">
+                </div>
+                <label class="multicheck-item multicheck-all">
+                  <input type="checkbox" id="place-all" checked> <span>Tout sélectionner</span>
+                </label>
+                <div class="multicheck-divider"></div>
+                <div id="place-options"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="map-wrap" style="position:relative;">
+      <div id="map" aria-label="Carte des lieux cités"></div>
+      <div class="empty-state" id="empty-state">
+        <div class="empty-card">
+          <strong>Aucun lieu pour cette combinaison de filtres.</strong>
+          <p>Changer la période ou élargir le filtre sur les pays pour réafficher des points.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.js"></script>
+  <script>
+    const paletteBase = [
+      '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45',
+      '#fabed4', '#469990', '#dcbeff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000',
+      '#ffd8b1', '#000075', '#a9a9a9', '#ffffff', '#e05c5c', '#5cb85c', '#5bc0de', '#f0ad4e',
+      '#d9534f', '#c7254e', '#00b300', '#0057e7', '#ff6600', '#6600cc', '#00cccc', '#cc00cc'
+    ];
+
+    const map = L.map('map', { worldCopyJump: true, preferCanvas: true }).setView([20, 5], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    const markersLayer = L.layerGroup().addTo(map);
+    // --- Multicheck state : Sets de pays COCHÉS (vide = rien affiché) ---
+    let selectedSource = new Set();
+    let selectedPlace = new Set();
+
+    function setupMulticheck(triggerId, dropdownId, allCheckId, optionsContainerId, stateSet, labelId, onChange) {
+      const trigger = document.getElementById(triggerId);
+      const dropdown = document.getElementById(dropdownId);
+      const allCheck = document.getElementById(allCheckId);
+      const optionsCont = document.getElementById(optionsContainerId);
+      const labelEl = document.getElementById(labelId);
+
+      function syncMaster(checkboxes) {
+        const total = checkboxes.length;
+        const checkedCount = checkboxes.filter(cb => cb.checked).length;
+        allCheck.checked = checkedCount === total;
+        allCheck.indeterminate = checkedCount > 0 && checkedCount < total;
+      }
+
+      function updateLabel() {
+        if (stateSet.size === 0) {
+          labelEl.textContent = 'Aucun';
+        } else if (stateSet.size === 1) {
+          labelEl.textContent = [...stateSet][0];
+        } else {
+          const total = optionsCont.querySelectorAll('input[type="checkbox"]').length;
+          labelEl.textContent = stateSet.size === total ? 'Tous' : `${stateSet.size} sélectionné(s)`;
+        }
+      }
+
+      function populate(countries) {
+        // Initialisation : tout coché
+        countries.forEach(c => stateSet.add(c));
+        optionsCont.innerHTML = countries.map(country => `
+          <label class="multicheck-item">
+            <input type="checkbox" value="${country}" checked>
+            <span>${country}</span>
+          </label>
+        `).join('');
+
+        const checkboxes = [...optionsCont.querySelectorAll('input[type="checkbox"]')];
+
+        checkboxes.forEach(cb => {
+          cb.addEventListener('change', () => {
+            if (cb.checked) { stateSet.add(cb.value); }
+            else { stateSet.delete(cb.value); }
+            syncMaster(checkboxes);
+            updateLabel();
+            onChange();
+          });
+        });
+
+        syncMaster(checkboxes);
+        updateLabel();
+      }
+
+      allCheck.addEventListener('change', () => {
+        const checked = allCheck.checked;
+        const checkboxes = [...optionsCont.querySelectorAll('input[type="checkbox"]')];
+        checkboxes.forEach(cb => {
+          cb.checked = checked;
+          if (checked) { stateSet.add(cb.value); }
+          else { stateSet.delete(cb.value); }
+        });
+        allCheck.indeterminate = false;
+        updateLabel();
+        onChange();
+      });
+
+      // Recherche dans les options
+      const searchInput = dropdown.querySelector('input[type="text"]');
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          const q = searchInput.value.trim().toLowerCase();
+          optionsCont.querySelectorAll('label.multicheck-item').forEach(label => {
+            const text = label.querySelector('span')?.textContent.toLowerCase() || '';
+            label.classList.toggle('hidden', q.length > 0 && !text.includes(q));
+          });
+        });
+        searchInput.addEventListener('click', e => e.stopPropagation());
+      }
+
+      trigger.addEventListener('click', () => {
+        const isOpen = !dropdown.hidden;
+        dropdown.hidden = isOpen;
+        trigger.setAttribute('aria-expanded', String(!isOpen));
+        if (!isOpen && searchInput) setTimeout(() => searchInput.focus(), 50);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.hidden = true;
+          trigger.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      return { populate, updateLabel };
+    }
+
+    let sourceMulticheck, placeMulticheck;
+
+    // Debounce : évite de recalculer à chaque pixel du slider
+    let renderTimeout = null;
+    function debouncedRender() {
+      if (renderTimeout) clearTimeout(renderTimeout);
+      renderTimeout = setTimeout(renderMarkers, 120);
+    }
+    const statTotal = document.getElementById('stat-total');
+    const statVisible = document.getElementById('stat-visible');
+    const statSource = document.getElementById('stat-source');
+    const yearMinReadout = document.getElementById('year-min-readout');
+    const yearMaxReadout = document.getElementById('year-max-readout');
+    const emptyState = document.getElementById('empty-state');
+    const yearSlider = document.getElementById('year-slider');
+
+    let geojsonData = null;
+    let colorMap = {};
+    let legendControl = null;
+    let yearMin = 1970;
+    let yearMax = 2025;
+
+    function normalizeList(value) {
+      if (Array.isArray(value)) return value.filter(v => v !== null && v !== undefined && `${v}`.trim() !== '');
+      if (value === null || value === undefined || `${value}`.trim() === '') return [];
+      return [value];
+    }
+
+    function uniqueSorted(values) {
+      return [...new Set(values)].sort((a, b) => `${a}`.localeCompare(`${b}`, 'fr'));
+    }
+
+    function buildColorMap(countries) {
+      const map = {};
+      countries.forEach((country, i) => { map[country] = paletteBase[i % paletteBase.length]; });
+      return map;
+    }
+
+    function createLegend() {
+      if (legendControl) legendControl.remove();
+      legendControl = L.control({ position: 'bottomright' });
+      legendControl.onAdd = function () {
+        const div = L.DomUtil.create('div', 'legend');
+        const countries = selectedSource.size === 0
+          ? []
+          : Object.keys(colorMap).filter(c => selectedSource.has(c));
+        div.innerHTML = `<h3>Couleurs des points</h3>` + countries.map(country => `
+          <div class="legend-item">
+            <span class="legend-swatch" style="background:${colorMap[country] || '#999'}"></span>
+            <span>${country}</span>
+          </div>
+        `).join('');
+        return div;
+      };
+      legendControl.addTo(map);
+    }
+
+    function pieChartSvg(ranking, size = 86) {
+      const total = ranking.reduce((sum, item) => sum + Number(item.nb_articles || 0), 0);
+      if (!total) {
+        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2 - 3}" fill="#ddd" /></svg>`;
+      }
+      const cx = size / 2;
+      const cy = size / 2;
+      const radius = size / 2 - 3;
+
+      // Cas 100% une seule part : arc complet invalide en SVG → simple cercle coloré
+      if (ranking.length === 1 || ranking.filter(r => Number(r.nb_articles || 0) > 0).length === 1) {
+        const item = ranking.find(r => Number(r.nb_articles || 0) > 0);
+        const fill = colorMap[item.pays] || '#999';
+        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fill}" stroke="#ffffff" stroke-width="1"/>
+          <title>${item.pays}: ${item.nb_articles} article(s)</title>
+        </svg>`;
+      }
+
+      let currentAngle = -Math.PI / 2;
+      const slices = ranking.map(item => {
+        const value = Number(item.nb_articles || 0);
+        if (!value) return '';
+        const angle = (value / total) * Math.PI * 2;
+        const x1 = cx + radius * Math.cos(currentAngle);
+        const y1 = cy + radius * Math.sin(currentAngle);
+        currentAngle += angle;
+        const x2 = cx + radius * Math.cos(currentAngle);
+        const y2 = cy + radius * Math.sin(currentAngle);
+        const largeArcFlag = angle > Math.PI ? 1 : 0;
+        const fill = colorMap[item.pays] || '#999';
+        return `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z" fill="${fill}" stroke="#ffffff" stroke-width="1"><title>${item.pays}: ${value} article(s)</title></path>`;
+      }).join('');
+
+      return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${slices}</svg>`;
+    }
+
+
+    // Recalcule le ranking pays + nb articles selon filtres actifs
+    // Structure attendue : articles_par_journal_annee = [{journaux: [...], annee: int, pays: str|null, nb_articles: int}]
+    function itemMatchesFilters(item, minYear, maxYear) {
+      if (!item) return false;
+      if (item.annee < minYear || item.annee > maxYear) return false;
+      // Filtre journaux cochés (selectedPlace = ensemble des journaux cochés)
+      if (selectedPlace.size > 0) {
+        const jx = Array.isArray(item.journaux) ? item.journaux : (item.journaux ? [item.journaux] : []);
+        if (!jx.some(j => selectedPlace.has(j))) return false;
+      }
+      // Filtre pays source coché (selectedSource)
+      const pays = item.pays || null;
+      if (!pays || pays === 'null') return false;
+      if (selectedSource.size > 0 && !selectedSource.has(pays)) return false;
+      return true;
+    }
+
+    function rankingFiltered(props, minYear, maxYear) {
+      const data = normalizeList(props.articles_par_journal_annee);
+      const totals = {};
+      for (const item of data) {
+        if (!itemMatchesFilters(item, minYear, maxYear)) continue;
+        const pays = item.pays;
+        totals[pays] = (totals[pays] || 0) + (item.nb_articles || 0);
+      }
+      return Object.entries(totals)
+        .map(([pays, nb_articles]) => ({ pays, nb_articles }))
+        .sort((a, b) => b.nb_articles - a.nb_articles);
+    }
+
+    function countArticles(props, minYear, maxYear) {
+      const data = normalizeList(props.articles_par_journal_annee);
+      const seen = new Set();
+      let total = 0;
+      for (const item of data) {
+        if (item.annee < minYear || item.annee > maxYear) continue;
+        // Filtre journaux cochés
+        const jx = Array.isArray(item.journaux) ? item.journaux : (item.journaux ? [item.journaux] : []);
+        if (selectedPlace.size > 0 && !jx.some(j => selectedPlace.has(j))) continue;
+        // Clé unique = annee + journaux triés → indépendant du pays, pas de double comptage
+        const key = `${item.annee}|${[...jx].sort().join('|')}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        total += item.nb_articles || 0;
+      }
+      return total;
+    }
+
+    // Journaux actifs dans la période + filtres source
+    function journauxFiltered(props, minYear, maxYear) {
+      const data = normalizeList(props.articles_par_journal_annee);
+      const seen = new Set();
+      for (const item of data) {
+        if (!itemMatchesFilters(item, minYear, maxYear)) continue;
+        const jx = Array.isArray(item.journaux) ? item.journaux : (item.journaux ? [item.journaux] : []);
+        jx.forEach(j => seen.add(j));
+      }
+      return [...seen].sort((a, b) => a.localeCompare(b, 'fr'));
+    }
+
+    function buildPopup(props, minYear, maxYear) {
+      const ranking = rankingFiltered(props, minYear, maxYear);
+      const pie = pieChartSvg(ranking);
+      const rankingHtml = ranking.map(item => `
+        <div class="popup-ranking-item">
+          <span class="popup-dot" style="background:${colorMap[item.pays] || '#999'}"></span>
+          <span>${item.pays} — ${item.nb_articles} article${item.nb_articles > 1 ? 's' : ''}</span>
+        </div>
+      `).join('');
+      const journaux = journauxFiltered(props, minYear, maxYear).slice(0, 15);
+      const allAnnees = normalizeList(props.annees).map(v => Number(v)).filter(v => !Number.isNaN(v)).sort((a, b) => a - b);
+      // Période = bornes extrêmes du fichier, indépendamment du slider
+      const yearText = allAnnees.length
+        ? (allAnnees[0] === allAnnees[allAnnees.length - 1]
+            ? `${allAnnees[0]}`
+            : `${allAnnees[0]}–${allAnnees[allAnnees.length - 1]}`)
+        : '—';
+      const nbInPeriod = countArticles(props, minYear, maxYear);
+
+      return `
+        <div class="popup">
+          <h3>${props.lieu || 'Lieu sans nom'}</h3>
+          <div class="popup-meta">${props.nom_complet || props.pays_right || 'Pays non renseigné'}</div>
+          <div class="popup-grid">
+            <div>${pie}</div>
+            <div>${rankingHtml}</div>
+          </div>
+          <div class="popup-section"><strong>${nbInPeriod}</strong> article${nbInPeriod > 1 ? 's' : ''} uniques citant ce lieu, période ${yearText}.</div>
+          <div class="popup-section">
+            <div><strong>Journaux</strong></div>
+            <div class="popup-list">${journaux.length ? journaux.map(j => {
+              const pays = (window.journalPays || {})[j];
+              const col = pays ? (colorMap[pays] || '#aaa') : '#aaa';
+              return `<span class="tag" style="border-left:3px solid ${col};padding-left:6px">${j}</span>`;
+            }).join('') : '<span class="tag">Non renseigné</span>'}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function pointColor(feature, minYear, maxYear) {
+      const ranking = rankingFiltered(feature.properties, minYear, maxYear);
+      const match = selectedSource.size === 0 ? ranking[0] : ranking.find(item => selectedSource.has(item.pays));
+      return match ? (colorMap[match.pays] || '#999') : '#999';
+    }
+
+    function pointRadius(feature, minYear, maxYear) {
+      const n = countArticles(feature.properties, minYear, maxYear) || 1;
+      return Math.max(4, Math.min(15, 4 + Math.log10(Math.max(1, n)) * 5));
+    }
+
+    function isVisible(feature, minYear, maxYear) {
+      const props = feature.properties || {};
+      const years = normalizeList(props.annees).map(v => Number(v)).filter(v => !Number.isNaN(v));
+      const yearsOk = years.some(y => y >= minYear && y <= maxYear);
+      if (!yearsOk) return false;
+
+      // Un point est visible si au moins un item de articles_par_journal_annee
+      // passe tous les filtres actifs (période + journaux + pays source)
+      if (selectedPlace.size === 0 || selectedSource.size === 0) return false;
+      const data = normalizeList(props.articles_par_journal_annee);
+      return data.some(item => itemMatchesFilters(item, minYear, maxYear));
+    }
+
+    function renderMarkers() {
+      if (!geojsonData) return;
+      markersLayer.clearLayers();
+      const values = yearSlider.noUiSlider.get().map(v => Math.round(Number(v)));
+      const minYear = values[0];
+      const maxYear = values[1];
+      yearMinReadout.textContent = `De ${minYear}`;
+      yearMaxReadout.textContent = `À ${maxYear}`;
+
+      const visibleFeatures = geojsonData.features.filter(feature => isVisible(feature, minYear, maxYear));
+
+      visibleFeatures.forEach(feature => {
+        const coords = feature.geometry && feature.geometry.coordinates;
+        if (!coords || coords.length < 2) return;
+        const color = pointColor(feature, minYear, maxYear);
+        const marker = L.circleMarker([coords[1], coords[0]], {
+          radius: pointRadius(feature, minYear, maxYear),
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.78,
+          weight: 1,
+          opacity: 0.95
+        });
+        marker.bindPopup(buildPopup(feature.properties, minYear, maxYear), { maxWidth: 360 });
+        markersLayer.addLayer(marker);
+      });
+
+      statVisible.textContent = `${visibleFeatures.length} visibles`;
+      const totalArticlesInPeriod = visibleFeatures.reduce((sum, f) => sum + countArticles(f.properties, minYear, maxYear), 0);
+      statSource.textContent = `${totalArticlesInPeriod.toLocaleString('fr-FR')} citations`;
+      emptyState.style.display = visibleFeatures.length ? 'none' : 'flex';
+      createLegend();
+    }
+
+    async function init() {
+      const response = await fetch('./data.geojson.gz');
+      const blob = await response.blob();
+      const ds = new DecompressionStream('gzip');
+      const decompressedStream = blob.stream().pipeThrough(ds);
+      const decompressedBlob = await new Response(decompressedStream).blob();
+      const text = await decompressedBlob.text();
+      geojsonData = JSON.parse(text);
+
+      const features = geojsonData.features || [];
+      statTotal.textContent = `${features.length} lieux`;
+
+      const allSourceCountries = uniqueSorted(
+        features.flatMap(feature => normalizeList(feature.properties?.pays_ranking).map(item => item?.pays)).filter(Boolean)
+      );
+      // allPlaceCountries supprimé — remplacé par journaux
+      const allYears = uniqueSorted(
+        features.flatMap(feature => normalizeList(feature.properties?.annees).map(v => Number(v)).filter(v => !Number.isNaN(v)))
+      );
+
+      yearMin = allYears.length ? allYears[0] : 1970;
+      yearMax = allYears.length ? allYears[allYears.length - 1] : 2025;
+      colorMap = buildColorMap(allSourceCountries);
+      // statSource mis à jour dynamiquement dans renderMarkers
+
+      // options peuplées via setupMulticheck ci-dessous
+
+      noUiSlider.create(yearSlider, {
+        start: [2000, 2025],
+        connect: true,
+        step: 1,
+        range: { min: 2000, max: 2025 },
+        behaviour: 'tap-drag',
+        tooltips: [true, true],
+        format: {
+          to: value => `${Math.round(value)}`,
+          from: value => Number(value)
+        }
+      });
+
+      yearSlider.noUiSlider.on('change', renderMarkers);
+      yearSlider.noUiSlider.on('slide', debouncedRender);
+      sourceMulticheck = setupMulticheck('source-trigger','source-dropdown','source-all','source-options', selectedSource, 'source-label', renderMarkers);
+      placeMulticheck  = setupMulticheck('place-trigger', 'place-dropdown', 'place-all', 'place-options',  selectedPlace,  'place-label',  renderMarkers);
+      sourceMulticheck.populate(allSourceCountries);
+
+      const allJournaux = uniqueSorted(
+        features.flatMap(f => normalizeList(f.properties?.journaux)).filter(Boolean)
+      );
+      placeMulticheck.populate(allJournaux);
+
+      // Construire dict journal → pays dominant (pour colorer les tags journaux)
+      const journalPaysCounts = {}; // {journal: {pays: count}}
+      for (const f of features) {
+        for (const item of normalizeList(f.properties?.articles_par_journal_annee)) {
+          if (!item?.pays || item.pays === 'null') continue;
+          const jx = Array.isArray(item.journaux) ? item.journaux : [item.journaux];
+          for (const j of jx) {
+            if (!j) continue;
+            journalPaysCounts[j] = journalPaysCounts[j] || {};
+            journalPaysCounts[j][item.pays] = (journalPaysCounts[j][item.pays] || 0) + (item.nb_articles || 1);
+          }
+        }
+      }
+      // Pour chaque journal, garder le pays dominant
+      window.journalPays = {};
+      for (const [journal, paysCounts] of Object.entries(journalPaysCounts)) {
+        window.journalPays[journal] = Object.entries(paysCounts)
+          .sort((a, b) => b[1] - a[1])[0][0];
+      }
+
+      const bounds = L.geoJSON(geojsonData).getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds.pad(0.1));
+
+      renderMarkers();
+    }
+
+    init().catch(error => {
+      console.error(error);
+      document.querySelector('.map-wrap').insertAdjacentHTML('beforeend', `
+        <div class="empty-state" style="display:flex;">
+          <div class="empty-card">
+            <strong>Impossible de charger <code>data.geojson.gz</code>.</strong>
+            <p>Erreur lors du chargement du fichier. Veuillez contacter l'auteur du site.</p>
+          </div>
+        </div>
+      `);
+    });
+  </script>
+</body>
+</html>
